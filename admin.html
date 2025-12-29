@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaderboard Admin</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    input { margin: 5px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+
+<h2>Leaderboard Admin Panel</h2>
+
+<input id="password" type="password" placeholder="Admin Password"><br>
+
+<h3>Update / Add Player</h3>
+<input id="name" placeholder="Player Name">
+<input id="score" placeholder="Score">
+<button onclick="update()">Update</button>
+
+<h3>Delete Player</h3>
+<input id="delname" placeholder="Player Name">
+<button onclick="remove()">Delete</button>
+
+<script>
+const API = "";
+
+function update() {
+  fetch(API + "/admin/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      password: password.value,
+      name: name.value,
+      score: parseFloat(score.value)
+    })
+  }).then(r => r.json()).then(alert);
+}
+
+function remove() {
+  fetch(API + "/admin/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      password: password.value,
+      name: delname.value
+    })
+  }).then(r => r.json()).then(alert);
+}
+</script>
+
+</body>
+</html>
