@@ -3,50 +3,106 @@
 <head>
   <title>Leaderboard Admin</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    input { margin: 5px; }
-    button { margin: 5px; }
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    h2 { margin-top: 30px; }
+    input, button { padding: 6px; margin: 4px; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+    .danger { color: red; cursor: pointer; }
   </style>
 </head>
 <body>
 
-<h2>Leaderboard Admin Panel</h2>
+<h1>Leaderboard Admin Panel</h1>
 
-<input id="password" type="password" placeholder="Admin Password"><br>
+<input id="password" type="password" placeholder="Admin Password">
+<button onclick="loadAll()">Load Leaderboard</button>
 
-<h3>Update / Add Player</h3>
-<input id="name" placeholder="Player Name">
-<input id="score" placeholder="Score">
-<button onclick="update()">Update</button>
+<h2>Search Player</h2>
+<input id="search" placeholder="Search by name" oninput="render()">
 
-<h3>Delete Player</h3>
-<input id="delname" placeholder="Player Name">
-<button onclick="remove()">Delete</button>
+<h2>Top 10 Leaderboard</h2>
+<table id="top10">
+  <thead>
+    <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>All Players</h2>
+<table id="all">
+  <thead>
+    <tr><th>Name</th><th>Score</th><th>Actions</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
 <script>
-const API = "";
+let allPlayers = [];
 
-function update() {
-  fetch(API + "/admin/update", {
+function loadAll() {
+  fetch("/admin/all", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      password: password.value,
-      name: name.value,
-      score: parseFloat(score.value)
-    })
-  }).then(r => r.json()).then(alert);
+    body: JSON.stringify({ password: password.value })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) return alert(data.error);
+    allPlayers = data;
+    render();
+  });
 }
 
-function remove() {
-  fetch(API + "/admin/delete", {
+function render() {
+  const q = search.value.toLowerCase();
+  const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(q));
+
+  // Top 10
+  const top10Body = document.querySelector("#top10 tbody");
+  top10Body.innerHTML = "";
+  allPlayers.slice(0, 10).forEach((p, i) => {
+    top10Body.innerHTML +=
+      `<tr><td>#${i+1}</td><td>${p.name}</td><td>${p.score}</td></tr>`;
+  });
+
+  // All players
+  const allBody = document.querySelector("#all tbody");
+  allBody.innerHTML = "";
+  filtered.forEach(p => {
+    allBody.innerHTML += `
+      <tr>
+        <td><input value="${p.name}" id="n_${p.name}"></td>
+        <td><input value="${p.score}" id="s_${p.name}"></td>
+        <td>
+          <button onclick="update('${p.name}')">Save</button>
+          <span class="danger" onclick="del('${p.name}')">Delete</span>
+        </td>
+      </tr>`;
+  });
+}
+
+function update(oldName) {
+  fetch("/admin/update", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       password: password.value,
-      name: delname.value
+      oldName: oldName,
+      name: document.getElementById("n_" + oldName).value,
+      score: parseFloat(document.getElementById("s_" + oldName).value)
     })
-  }).then(r => r.json()).then(alert);
+  }).then(() => loadAll());
+}
+
+function del(name) {
+  if (!confirm("Delete " + name + "?")) return;
+  fetch("/admin/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: password.value, name })
+  }).then(() => loadAll());
 }
 </script>
 
