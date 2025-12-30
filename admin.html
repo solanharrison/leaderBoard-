@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Leaderboard Admin</title>
+  <title>Tezrun Leaderboard Admin</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
-    h2 { margin-top: 30px; }
-    input, button { padding: 6px; margin: 4px; }
-    table { border-collapse: collapse; width: 100%; background: white; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background: #eee; }
-    .danger { color: red; cursor: pointer; }
+    body { font-family: Arial; padding: 20px; background:#f5f5f5; }
+    input, button { padding:6px; margin:4px; }
+    table { border-collapse: collapse; width:100%; background:white; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+    th { background:#eee; }
+    .danger { color:red; cursor:pointer; }
   </style>
 </head>
 <body>
 
-<h1>Leaderboard Admin Panel</h1>
+<h1>Tezrun Leaderboard Admin</h1>
 
 <input id="password" type="password" placeholder="Admin Password">
 <button onclick="loadAll()">Load Leaderboard</button>
@@ -23,23 +22,23 @@
 <input id="search" placeholder="Search by name" oninput="render()">
 
 <h2>Top 10 Leaderboard</h2>
-<table id="top10">
+<table>
   <thead>
-    <tr><th>Rank</th><th>Name</th><th>Score</th></tr>
+    <tr><th>Rank</th><th>ID</th><th>Name</th><th>Score</th></tr>
   </thead>
-  <tbody></tbody>
+  <tbody id="top10"></tbody>
 </table>
 
 <h2>All Players</h2>
-<table id="all">
+<table>
   <thead>
-    <tr><th>Name</th><th>Score</th><th>Actions</th></tr>
+    <tr><th>ID</th><th>Name</th><th>Score</th><th>Actions</th></tr>
   </thead>
-  <tbody></tbody>
+  <tbody id="all"></tbody>
 </table>
 
 <script>
-let allPlayers = [];
+let players = [];
 
 function loadAll() {
   fetch("/admin/all", {
@@ -50,59 +49,60 @@ function loadAll() {
   .then(r => r.json())
   .then(data => {
     if (data.error) return alert(data.error);
-    allPlayers = data;
+    players = data;
     render();
   });
 }
 
 function render() {
   const q = search.value.toLowerCase();
-  const filtered = allPlayers.filter(p => p.name.toLowerCase().includes(q));
 
   // Top 10
-  const top10Body = document.querySelector("#top10 tbody");
-  top10Body.innerHTML = "";
-  allPlayers.slice(0, 10).forEach((p, i) => {
-    top10Body.innerHTML +=
-      `<tr><td>#${i+1}</td><td>${p.name}</td><td>${p.score}</td></tr>`;
+  const top10 = document.getElementById("top10");
+  top10.innerHTML = "";
+  players.slice(0,10).forEach((p,i)=>{
+    top10.innerHTML +=
+      `<tr><td>#${i+1}</td><td>${p.id}</td><td>${p.name}</td><td>${p.score}</td></tr>`;
   });
 
   // All players
-  const allBody = document.querySelector("#all tbody");
-  allBody.innerHTML = "";
-  filtered.forEach(p => {
-    allBody.innerHTML += `
+  const all = document.getElementById("all");
+  all.innerHTML = "";
+  players.filter(p=>p.name.toLowerCase().includes(q))
+    .forEach(p=>{
+      all.innerHTML += `
       <tr>
-        <td><input value="${p.name}" id="n_${p.name}"></td>
-        <td><input value="${p.score}" id="s_${p.name}"></td>
+        <td>${p.id}</td>
+        <td><input id="n${p.id}" value="${p.name}"></td>
+        <td><input id="s${p.id}" value="${p.score}"></td>
         <td>
-          <button onclick="update('${p.name}')">Save</button>
-          <span class="danger" onclick="del('${p.name}')">Delete</span>
+          <button onclick="update(${p.id})">Save</button>
+          <span class="danger" onclick="del(${p.id})">Delete</span>
         </td>
       </tr>`;
-  });
+    });
 }
 
-function update(oldName) {
+function update(id) {
   fetch("/admin/update", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
       password: password.value,
-      oldName: oldName,
-      name: document.getElementById("n_" + oldName).value,
-      score: parseFloat(document.getElementById("s_" + oldName).value)
+      id: id,
+      name: document.getElementById("n"+id).value,
+      score: parseFloat(document.getElementById("s"+id).value)
     })
-  }).then(() => loadAll());
+  }).then(()=>loadAll());
 }
 
-function del(name) {
-  if (!confirm("Delete " + name + "?")) return;
+function del(id) {
+  if(!confirm("Delete player "+id+" ?")) return;
   fetch("/admin/delete", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: password.value, name })
-  }).then(() => loadAll());
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ password: password.value, id })
+  }).then(()=>loadAll());
 }
 </script>
 
