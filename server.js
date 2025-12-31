@@ -11,8 +11,10 @@ app.use(express.json());
 // ✅ Supabase PostgreSQL connection (from Render ENV)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  family: 4   // ✅ FORCE IPv4 (THIS FIXES ENETUNREACH)
 });
+
 
 // ---------------- SUBMIT SCORE ----------------
 app.post("/submit-score", async (req, res) => {
@@ -58,3 +60,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
+
